@@ -61,6 +61,7 @@ type txdata struct {
 	Hash            *common.Hash    `json:"hash" rlp:"-"`
 	L1RollupTxId    *hexutil.Uint64 `json:"l1RollupTxId,omitempty" rlp:"nil,?"`
 	L1MessageSender *common.Address `json:"l1MessageSender,omitempty" rlp:"nil,?"`
+	QueueOrigin     *big.Int        `json:"l1MessageSender,omitempty" rlp:"nil,?"`
 }
 
 type txdataMarshaling struct {
@@ -91,6 +92,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		Recipient:       to,
 		L1MessageSender: l1MessageSender,
 		L1RollupTxId:    l1RollupTxId,
+		QueueOrigin:     big.NewInt(0),
 		Payload:         data,
 		Amount:          new(big.Int),
 		GasLimit:        gasLimit,
@@ -246,17 +248,21 @@ func (tx *Transaction) Hash() common.Hash {
 
 	var sender *common.Address
 	var l1RollupTxId *hexutil.Uint64
+	var queueOrigin *big.Int
 	if tx != nil {
 		sender = tx.data.L1MessageSender
 		tx.data.L1MessageSender = nil
 		l1RollupTxId = tx.data.L1RollupTxId
 		tx.data.L1RollupTxId = nil
+		queueOrigin = tx.data.QueueOrigin
+		tx.data.QueueOrigin = nil
 	}
 	v := rlpHash(tx)
 
 	if tx != nil {
 		tx.data.L1MessageSender = sender
 		tx.data.L1RollupTxId = l1RollupTxId
+		tx.data.QueueOrigin = queueOrigin
 	}
 	tx.hash.Store(v)
 	return v
@@ -280,6 +286,7 @@ func (tx *Transaction) Size() common.StorageSize {
 //
 // XXX Rename message to something less arbitrary?
 func (tx *Transaction) AsMessage(s Signer) (Message, error) {
+	// TODO: add queueOrigin to this
 	msg := Message{
 		nonce:           tx.data.AccountNonce,
 		gasLimit:        tx.data.GasLimit,
@@ -287,6 +294,7 @@ func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 		to:              tx.data.Recipient,
 		l1MessageSender: tx.data.L1MessageSender,
 		l1RollupTxId:    tx.data.L1RollupTxId,
+		queueOrigin:     tx.data.QueueOrigin,
 		amount:          tx.data.Amount,
 		data:            tx.data.Payload,
 		checkNonce:      true,
@@ -453,6 +461,7 @@ type Message struct {
 	to              *common.Address
 	l1MessageSender *common.Address
 	l1RollupTxId    *hexutil.Uint64
+	queueOrigin     *big.Int
 	from            common.Address
 	nonce           uint64
 	amount          *big.Int
@@ -474,6 +483,7 @@ func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *b
 		checkNonce:      checkNonce,
 		l1RollupTxId:    l1RollupTxId,
 		l1MessageSender: l1MessageSender,
+		queueOrigin:     big.NewInt(0),
 	}
 }
 
@@ -481,6 +491,7 @@ func (m Message) From() common.Address             { return m.from }
 func (m Message) To() *common.Address              { return m.to }
 func (m Message) L1MessageSender() *common.Address { return m.l1MessageSender }
 func (m Message) L1RollupTxId() *hexutil.Uint64    { return m.l1RollupTxId }
+func (m Message) QueueOrigin() *big.Int            { return m.queueOrigin }
 func (m Message) GasPrice() *big.Int               { return m.gasPrice }
 func (m Message) Value() *big.Int                  { return m.amount }
 func (m Message) Gas() uint64                      { return m.gasLimit }
