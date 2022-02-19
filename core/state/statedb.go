@@ -56,6 +56,32 @@ func (n *proofList) Delete(key []byte) error {
 	panic("not supported")
 }
 
+type transientStorage struct {
+	storage map[common.Address]map[common.Hash]common.Hash
+	size    int
+}
+
+func (t *transientStorage) Copy() *transientStorage {
+	cp := newTransientStorage()
+	for addr, storage := range t.storage {
+		cp.storage[addr] = make(map[common.Hash]common.Hash)
+		for k, v := range storage {
+			cp.storage[addr][k] = v
+		}
+
+	}
+	cp.size = t.size
+	return cp
+}
+
+// newTransientStorage creates a new transientStorage.
+func newTransientStorage() *transientStorage {
+	return &transientStorage{
+		storage: make(map[common.Address]map[common.Hash]common.Hash),
+		size:    0,
+	}
+}
+
 // StateDB structs within the ethereum protocol are used to store anything
 // within the merkle trie. StateDBs take care of caching and storing
 // nested states. It's the general query interface to retrieve:
@@ -99,6 +125,9 @@ type StateDB struct {
 	// Per-transaction access list
 	accessList *accessList
 
+	// Per-transaction transient storage
+	transientStorage *transientStorage
+
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
 	journal        *journal
@@ -141,6 +170,7 @@ func New(root common.Hash, db Database, snaps *snapshot.Tree) (*StateDB, error) 
 		logs:                make(map[common.Hash][]*types.Log),
 		preimages:           make(map[common.Hash][]byte),
 		journal:             newJournal(),
+		transientStorage:    newTransientStorage(),
 		accessList:          newAccessList(),
 		hasher:              crypto.NewKeccakState(),
 	}
@@ -448,6 +478,32 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 	return true
 }
 
+func (s *StateDB) SetTransientStorage(addr common.Address, key, value common.Hash) {
+	if _, ok := s.transientStorage.storage[addr]; !ok {
+		s.transientStorage.storage[addr] = make(map[common.Hash]common.Hash)
+	}
+	prevalue := s.transientStorage.storage[addr][key]
+	s.transientStorage.storage[addr][key] = value
+	s.transientStorage.size++
+
+	s.journal.append(transientStorageChange{
+		account:  &addr,
+		key:      key,
+		prevalue: prevalue,
+	})
+}
+
+func (s *StateDB) GetTransientStorage(addr common.Address, key common.Hash) common.Hash {
+	if _, ok := s.transientStorage.storage[addr]; !ok {
+		return common.Hash{}
+	}
+	return s.transientStorage.storage[addr][key]
+}
+
+func (s *StateDB) GetTransientStorageSize() int {
+	return s.transientStorage.size
+}
+
 //
 // Setting, updating & deleting state object methods.
 //
@@ -706,6 +762,8 @@ func (s *StateDB) Copy() *StateDB {
 	// However, it doesn't cost us much to copy an empty list, so we do it anyway
 	// to not blow up if we ever decide copy it in the middle of a transaction
 	state.accessList = s.accessList.Copy()
+
+	state.transientStorage = s.transientStorage.Copy()
 
 	// If there's a prefetcher running, make an inactive copy of it that can
 	// only access data but does not actively preload (since the user will not

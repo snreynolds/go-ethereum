@@ -47,6 +47,10 @@ type StateDB interface {
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)
 
+	GetTransientStorage(addr common.Address, key common.Hash) common.Hash
+	SetTransientStorage(addr common.Address, key, value common.Hash)
+	GetTransientStorageSize() int
+
 	Suicide(common.Address) bool
 	HasSuicided(common.Address) bool
 
