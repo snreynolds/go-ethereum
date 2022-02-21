@@ -217,15 +217,6 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	return params.SloadGasEIP2200, nil // dirty update (2.2)
 }
 
-// If there are more than 20 elements in transient storage, begin
-// to charge an additional 200 * (size - 20) gas for each storage slot
-func gasTstoreEIP1153(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	if size := evm.StateDB.GetTransientStorageSize(); size > 20 {
-		return 200 * (uint64(size) - 20), nil
-	}
-	return 0, nil
-}
-
 func makeGasLog(n uint64) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 		requestedSize, overflow := stack.Back(1).Uint64WithOverflow()

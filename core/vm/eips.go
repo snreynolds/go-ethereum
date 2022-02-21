@@ -179,7 +179,6 @@ func enable1153(jt *JumpTable) {
 	jt[TSTORE] = &operation{
 		execute:     opTstore,
 		constantGas: params.NetSstoreDirtyGas,
-		dynamicGas:  gasTstoreEIP1153,
 		minStack:    minStack(2, 0),
 		maxStack:    maxStack(2, 0),
 	}

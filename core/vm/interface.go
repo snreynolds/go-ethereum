@@ -49,7 +49,6 @@ type StateDB interface {
 
 	GetTransientStorage(addr common.Address, key common.Hash) common.Hash
 	SetTransientStorage(addr common.Address, key, value common.Hash)
-	GetTransientStorageSize() int
 
 	Suicide(common.Address) bool
 	HasSuicided(common.Address) bool
