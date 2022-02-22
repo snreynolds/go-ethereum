@@ -448,14 +448,14 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 	return true
 }
 
-func (s *StateDB) SetTransientStorage(addr common.Address, key, value common.Hash) {
+func (s *StateDB) SetTransientState(addr common.Address, key, value common.Hash) {
 	stateObject := s.getStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetTransientState(key, value)
 	}
 }
 
-func (s *StateDB) GetTransientStorage(addr common.Address, key common.Hash) common.Hash {
+func (s *StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
 	stateObject := s.getStateObject(addr)
 	if stateObject != nil {
 		return stateObject.GetTransientState(key)

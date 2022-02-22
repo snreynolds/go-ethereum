@@ -470,6 +470,7 @@ func (s *stateObject) deepCopy(db *StateDB) *stateObject {
 	stateObject.suicided = s.suicided
 	stateObject.dirtyCode = s.dirtyCode
 	stateObject.deleted = s.deleted
+	stateObject.transientStorage = s.transientStorage.Copy()
 	return stateObject
 }
 
