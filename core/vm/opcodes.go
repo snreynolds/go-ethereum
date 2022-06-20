@@ -116,8 +116,8 @@ const (
 	MSIZE    OpCode = 0x59
 	GAS      OpCode = 0x5a
 	JUMPDEST OpCode = 0x5b
-	TLOAD    OpCode = 0x5c
-	TSTORE   OpCode = 0x5d
+	TLOAD    OpCode = 0xb3
+	TSTORE   OpCode = 0xb4
 )
 
 // 0x60 range - pushes.
