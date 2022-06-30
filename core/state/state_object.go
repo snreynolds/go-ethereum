@@ -329,6 +329,10 @@ func (s *stateObject) finalise(prefetch bool) {
 	if len(s.dirtyStorage) > 0 {
 		s.dirtyStorage = make(Storage)
 	}
+
+	if len(s.transientStorage) > 0 {
+		s.transientStorage = make(Storage)
+	}
 }
 
 // updateTrie writes cached storage modifications into the object's storage trie.
